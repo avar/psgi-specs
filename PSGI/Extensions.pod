@@ -96,9 +96,32 @@ as its first argument, and return value of the callbacks will be
 simply ignored. An exception thrown inside callbacks MAY also be
 ignored.
 
-If the server also supports C<psgix.harakiri>, it SHOULD implement in
-a way that cleanup handlers run before harakiri checker, so that the
-cleanup handlers can commit the harakiri flag.
+The remaining remaining flags MUST be set to indicate precisely what
+sort of cleanup mode the server supports, since they have some leeway
+in how they implement them:
+
+C<psgix.cleanup.can_commit_harakiri> - A boolean flag indicating
+whether the cleanup handlers can commit the harakiri flag.
+
+On servers that support both cleanup handlers and C<psgix.harakiri>
+this SHOULD be set to true since we might decide that we want to kill
+the worker after the cleanup handler runs.
+
+However if the server can't decide to kill workers once it's in the
+cleanup phase for whatever reason this should be set to false to
+indicate this caveat to the application.
+
+C<psgix.cleanup.runs_on_committed_harakiri> - A boolean flag
+indicating whether the cleanup handlers will still run if the
+application commits the harakiri flag before it gets to the cleanup
+phase.
+
+This SHOULD be set to true since we'd like to run the cleanup phase
+even if we've decided that we don't want the worker to serve another
+request, but if the server can't do that (probably because
+C<psgix.cleanup.can_commit_harakiri> is set to false) it could
+indicate that the cleanup handlers won't run when the harakiri flag is
+set by setting this to false.
 
 =back
 
